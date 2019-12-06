@@ -20,18 +20,23 @@ Route::middleware('auth:api')->get('/user', static function (Request $request) {
 
 Route::group(['prefix' => 'v1','namespace' => 'API'], static function(){
     Route::apiResource('users', 'UserController');
-    Route::apiResource('recipes', 'RecipeController');
+    Route::apiResource('recipes', 'RecipeController')->only('show', 'index');
 
     Route::group(['prefix' => 'users'], static function(){
 
-        Route::get('/{id}/recipes' ,['uses' => 'RecipeController@getRecipesByUser',
+        Route::get('/{id}/recipes' ,['uses' => 'RecipeController@getRecipes',
                                      'as'   => 'users.recipes',]);
 
-        Route::get('/{id}/recipes/{recipe_id}', ['uses' => 'RecipeController@getRecipeByUser',
+        Route::post('/{id}/recipes', ['uses' => 'RecipeController@createRecipe',
+                                      'as'   => 'users.createRecipe',]);
+
+        Route::get('/{id}/recipes/{recipe_id}', ['uses' => 'RecipeController@getRecipe',
                                                  'as'   => 'users.recipe',]);
 
-        Route::post('/{id}/recipes', ['uses' => 'RecipeController@createRecipeByUser',
-                                      'as'   => 'users.createRecipe',]);
-    });
+        Route::patch('/{id}/recipes/{recipe_id}', ['uses' => 'RecipeController@updateRecipe',
+                                                   'as'   => 'users.updateRecipe',]);
 
+        Route::delete('/{id}/recipes/{recipe_id}', ['uses' => 'RecipeController@deleteRecipe',
+                                                   'as'   => 'users.deleteRecipe',]);
+    });
 });

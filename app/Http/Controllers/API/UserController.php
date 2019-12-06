@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Resources\RecipeResource;
 use App\Http\Resources\UserResource;
-use App\Recipe;
 use App\User;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Ingredient extends Model
 {
-    public $fillable = ['name', 'quantity'];
+    public $fillable = ['name', 'quantity', 'recipe_id'];
 
     public function recipe() {
         return $this->belongsTo(Recipe::class);
