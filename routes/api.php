@@ -19,24 +19,34 @@ Route::middleware('auth:api')->get('/user', static function (Request $request) {
 });
 
 Route::group(['prefix' => 'v1','namespace' => 'API'], static function(){
-    Route::apiResource('users', 'UserController');
-    Route::apiResource('recipes', 'RecipeController')->only('show', 'index');
 
-    Route::group(['prefix' => 'users'], static function(){
+    Route::post('register', 'AuthController@register');
+    Route::post('login', 'AuthController@login');
 
-        Route::get('/{id}/recipes' ,['uses' => 'RecipeController@getRecipes',
-                                     'as'   => 'users.recipes',]);
+    Route::group(['middleware' => 'jwt.auth'], static function() {
+        Route::get('logout', 'AuthController@logout');
 
-        Route::post('/{id}/recipes', ['uses' => 'RecipeController@createRecipe',
-                                      'as'   => 'users.createRecipe',]);
+        Route::apiResource('users', 'UserController')->only('show', 'update')->middleware(['isAdminOrSelf']);
+        Route::apiResource('users', 'UserController')->only('destroy', 'index', 'store')->middleware(['isAdmin']);
+        Route::apiResource('recipes', 'RecipeController')->only('show', 'index');
 
-        Route::get('/{id}/recipes/{recipe_id}', ['uses' => 'RecipeController@getRecipe',
-                                                 'as'   => 'users.recipe',]);
 
-        Route::patch('/{id}/recipes/{recipe_id}', ['uses' => 'RecipeController@updateRecipe',
-                                                   'as'   => 'users.updateRecipe',]);
+        Route::group(['prefix' => 'users'], static function(){
 
-        Route::delete('/{id}/recipes/{recipe_id}', ['uses' => 'RecipeController@deleteRecipe',
-                                                   'as'   => 'users.deleteRecipe',]);
+            Route::get('/{id}/recipes' ,['uses' => 'RecipeController@getRecipes',
+                                         'as'   => 'users.recipes',]);
+
+            Route::post('/{id}/recipes', ['uses' => 'RecipeController@createRecipe',
+                                          'as'   => 'users.createRecipe',]);
+
+            Route::get('/{id}/recipes/{recipe_id}', ['uses' => 'RecipeController@getRecipe',
+                                                     'as'   => 'users.recipe',]);
+
+            Route::patch('/{id}/recipes/{recipe_id}', ['uses' => 'RecipeController@updateRecipe',
+                                                       'as'   => 'users.updateRecipe',]);
+
+            Route::delete('/{id}/recipes/{recipe_id}', ['uses' => 'RecipeController@deleteRecipe',
+                                                        'as'   => 'users.deleteRecipe',]);
+        });
     });
 });

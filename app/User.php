@@ -6,8 +6,9 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject
 {
     use Notifiable;
     use SoftDeletes;
@@ -39,7 +40,15 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function recipes() {
+    public function recipes(): \Illuminate\Database\Eloquent\Relations\HasMany {
         return $this->hasMany(Recipe::class);
+    }
+
+    public function getJWTIdentifier() {
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims(): array {
+        return [];
     }
 }

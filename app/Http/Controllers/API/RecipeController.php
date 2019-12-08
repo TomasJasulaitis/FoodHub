@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Requests\RecipeFormRequest;
 use App\Http\Resources\RecipeResource;
 use App\Recipe;
 use App\User;
@@ -21,9 +22,7 @@ class RecipeController extends Controller
      */
     public function index (): AnonymousResourceCollection {
         return RecipeResource::collection(
-            Recipe::with('ingredients')
-                ->with('nutrients')
-                ->with('user')
+            Recipe::with()
                 ->paginate(25));
     }
 
@@ -35,7 +34,7 @@ class RecipeController extends Controller
      * @return RecipeResource
      */
     public function show (Recipe $recipe): RecipeResource {
-        return new RecipeResource($recipe->load(['ingredients', 'nutrients', 'user']));
+        return new RecipeResource($recipe->load());
     }
 
     /**
@@ -46,7 +45,7 @@ class RecipeController extends Controller
      */
     public function getRecipes (Request $request, $userId): AnonymousResourceCollection {
         return RecipeResource::collection(
-            Recipe::with(['ingredients', 'nutrients', 'user'])
+            Recipe::with()
                 ->where('user_id', $userId)
                 ->paginate(25)
         );
@@ -54,26 +53,26 @@ class RecipeController extends Controller
 
     /**
      * @param  Request  $request
-     * @param $userId
+     * @param int $userId
      * @param $recipeId
      *
      * @return RecipeResource
      */
     public function getRecipe (Request $request, $userId, $recipeId): RecipeResource {
         return new RecipeResource(
-            Recipe::with(['ingredients', 'nutrients', 'user'])
+            Recipe::with()
                 ->where('user_id', $userId)
                 ->findOrFail($recipeId)
         );
     }
 
     /**
-     * @param  Request  $request
-     * @param int $userId
+     * @param  RecipeFormRequest  $request
+     * @param  int  $userId
      *
      * @return RecipeResource
      */
-    public function createRecipe (Request $request, $userId): RecipeResource {
+    public function createRecipe (RecipeFormRequest $request, $userId): RecipeResource {
         /**
          * @var $recipe Recipe
          */
@@ -83,45 +82,33 @@ class RecipeController extends Controller
         $ingredients = $request->input('ingredients');
 
         foreach ($nutrients as $nutrient) {
-            $recipe->nutrients()->create(['name'     => $nutrient['name'],
-                                          'quantity' => $nutrient['quantity'],]);
+            $recipe->nutrients()->create(['name'      => $nutrient['name'],
+                                          'quantity'  => $nutrient['quantity'],]);
         }
 
         foreach ($ingredients as $ingredient) {
-            $recipe->ingredients()->create(['name'     => $ingredient['name'],
-                                            'quantity' => $ingredient['quantity'],]);
+            $recipe->ingredients()->create(['name'      => $ingredient['name'],
+                                            'quantity'  => $ingredient['quantity'],]);
         }
 
-        return new RecipeResource($recipe->load(['ingredients', 'nutrients', 'user']));
+        return new RecipeResource($recipe->load());
     }
 
     /**
-     * @param  Request  $request
-     * @param int $userId
-     * @param int $recipeId
+     * @param  RecipeFormRequest  $request
+     * @param  int  $userId
+     * @param  int  $recipeId
      *
      * @return RecipeResource
      */
-    public function updateRecipe(Request $request, $userId, $recipeId): RecipeResource {
+    public function updateRecipe(RecipeFormRequest $request, $userId, $recipeId): RecipeResource {
         /**
          * @var Recipe $recipe
          */
-        $recipe = Recipe::with(['ingredients', 'nutrients', 'user'])
+        $recipe = Recipe::with()
             ->where('user_id', $userId)
             ->findOrFail($recipeId)
             ->first();
-
-        $validation = $request->validate([
-            'name' => 'required',
-            'description' => 'required',
-            'ingredients' => 'required',
-            'preparation_time' => 'required',
-            'nutrients' => 'required',
-            'calories' => 'required',
-            'number_of_servings' => 'required',
-            'image_url' => 'required',
-            'directions' => 'required',
-        ]);
 
         $recipe->update($request->except(['nutrients', 'ingredients']));
 
@@ -144,7 +131,7 @@ class RecipeController extends Controller
                                             'quantity'  => $ingredient['quantity']]);
         }
 
-        return new RecipeResource($recipe->load(['ingredients', 'nutrients', 'user']));
+        return new RecipeResource($recipe->load());
     }
 
     /**
@@ -156,7 +143,7 @@ class RecipeController extends Controller
      * @throws Exception
      */
     public function deleteRecipe(Request $request, $userId, $recipeId): JsonResponse {
-        $recipe = Recipe::with(['ingredients', 'nutrients', 'user'])
+        $recipe = Recipe::with()
             ->where('user_id', $userId)
             ->findOrFail($recipeId)
             ->first();
