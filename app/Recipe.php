@@ -8,6 +8,10 @@ class Recipe extends Model
 {
     public $guarded = [];
 
+    protected $with = ['nutrients', 'ingredients', 'user'];
+
+    protected $load = ['nutrients', 'ingredients', 'user'];
+
     public function user() {
         return $this->belongsTo(User::class);
     }
@@ -18,13 +22,5 @@ class Recipe extends Model
 
     public function ingredients() {
         return $this->hasMany(Ingredient::class);
-    }
-
-    public static function with($relations = []) {
-        return parent::with(array_merge($relations, ['nutrients', 'ingredients', 'user']));
-    }
-
-    public function load($relations = []) {
-        return parent::load(array_merge($relations, ['nutrients', 'ingredients', 'user']));
     }
 }

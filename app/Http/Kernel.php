@@ -64,6 +64,7 @@ class Kernel extends HttpKernel
         'auth.jwt' => \Tymon\JWTAuth\Http\Middleware\Authenticate::class,
         'isAdmin' => \App\Http\Middleware\CheckIsAdmin::class,
         'isAdminOrSelf' => \App\Http\Middleware\CheckIsAdminOrSelf::class,
+        'isAdminOrRecipeCreator' => \App\Http\Middleware\isAdminOrRecipeCreator::class,
     ];
 
     /**

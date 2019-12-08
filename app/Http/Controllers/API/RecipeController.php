@@ -5,25 +5,21 @@ namespace App\Http\Controllers\API;
 use App\Http\Requests\RecipeFormRequest;
 use App\Http\Resources\RecipeResource;
 use App\Recipe;
-use App\User;
-use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class RecipeController extends Controller
 {
+
     /**
      * Display a listing of the resource.
      *
      * @return AnonymousResourceCollection
      */
     public function index (): AnonymousResourceCollection {
-        return RecipeResource::collection(
-            Recipe::with()
-                ->paginate(25));
+        return RecipeResource::collection(Recipe::paginate(25));
     }
 
     /**
@@ -34,81 +30,46 @@ class RecipeController extends Controller
      * @return RecipeResource
      */
     public function show (Recipe $recipe): RecipeResource {
-        return new RecipeResource($recipe->load());
+        return new RecipeResource($recipe);
     }
 
     /**
-     * @param  Request  $request
      * @param $userId
      *
      * @return AnonymousResourceCollection
      */
-    public function getRecipes (Request $request, $userId): AnonymousResourceCollection {
-        return RecipeResource::collection(
-            Recipe::with()
-                ->where('user_id', $userId)
-                ->paginate(25)
-        );
-    }
-
-    /**
-     * @param  Request  $request
-     * @param int $userId
-     * @param $recipeId
-     *
-     * @return RecipeResource
-     */
-    public function getRecipe (Request $request, $userId, $recipeId): RecipeResource {
-        return new RecipeResource(
-            Recipe::with()
-                ->where('user_id', $userId)
-                ->findOrFail($recipeId)
-        );
+    public function getUserRecipes ($userId): AnonymousResourceCollection {
+        return RecipeResource::collection(Recipe::where('user_id', $userId)->paginate(25));
     }
 
     /**
      * @param  RecipeFormRequest  $request
-     * @param  int  $userId
      *
      * @return RecipeResource
      */
-    public function createRecipe (RecipeFormRequest $request, $userId): RecipeResource {
+    public function store (RecipeFormRequest $request): RecipeResource {
         /**
          * @var $recipe Recipe
          */
-        $recipe = User::find($userId)->recipes()->create($request->except('nutrients', 'ingredients'));
+        $recipe = auth()->user()->recipes()->create($request->except('nutrients', 'ingredients'));
 
-        $nutrients   = $request->input('nutrients');
-        $ingredients = $request->input('ingredients');
+        $recipe->nutrients()->createMany($request->input('nutrients'));
+        $recipe->ingredients()->createMany($request->input('ingredients'));
 
-        foreach ($nutrients as $nutrient) {
-            $recipe->nutrients()->create(['name'      => $nutrient['name'],
-                                          'quantity'  => $nutrient['quantity'],]);
-        }
-
-        foreach ($ingredients as $ingredient) {
-            $recipe->ingredients()->create(['name'      => $ingredient['name'],
-                                            'quantity'  => $ingredient['quantity'],]);
-        }
-
-        return new RecipeResource($recipe->load());
+        return new RecipeResource($recipe->load(['user', 'ingredients', 'nutrients']));
     }
 
     /**
      * @param  RecipeFormRequest  $request
-     * @param  int  $userId
      * @param  int  $recipeId
      *
      * @return RecipeResource
      */
-    public function updateRecipe(RecipeFormRequest $request, $userId, $recipeId): RecipeResource {
+    public function update (RecipeFormRequest $request, $recipeId): RecipeResource {
         /**
          * @var Recipe $recipe
          */
-        $recipe = Recipe::with()
-            ->where('user_id', $userId)
-            ->findOrFail($recipeId)
-            ->first();
+        $recipe = auth()->user()->recipes()->findOrFail($recipeId)->first();
 
         $recipe->update($request->except(['nutrients', 'ingredients']));
 
@@ -116,37 +77,20 @@ class RecipeController extends Controller
         $recipe->nutrients()->delete();
         $recipe->ingredients()->delete();
 
-        $nutrients   = $request->input('nutrients');
-        $ingredients = $request->input('ingredients');
+        $recipe->nutrients()->createMany($request->input('nutrients'));
+        $recipe->ingredients()->createMany($request->input('ingredients'));
 
-        foreach ($nutrients as $nutrient) {
-            $recipe->nutrients()->create(['name'      => $nutrient['name'],
-                                          'recipe_id' => $recipe->id,
-                                          'quantity'  => $nutrient['quantity']]);
-        }
-
-        foreach ($ingredients as $ingredient) {
-            $recipe->ingredients()->create(['name'      => $ingredient['name'],
-                                            'recipe_id' => $recipe->id,
-                                            'quantity'  => $ingredient['quantity']]);
-        }
-
-        return new RecipeResource($recipe->load());
+        return new RecipeResource($recipe);
     }
 
     /**
      * @param  Request  $request
-     * @param $userId
      * @param $recipeId
      *
      * @return JsonResponse
-     * @throws Exception
      */
-    public function deleteRecipe(Request $request, $userId, $recipeId): JsonResponse {
-        $recipe = Recipe::with()
-            ->where('user_id', $userId)
-            ->findOrFail($recipeId)
-            ->first();
+    public function destroy (Request $request, $recipeId): JsonResponse {
+        $recipe = auth()->user()->recipes()->findOrFail($recipeId)->first();
 
         $recipe->delete();
 

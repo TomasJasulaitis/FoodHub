@@ -13,40 +13,27 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+Route::group(['prefix' => 'v1', 'namespace' => 'API'], static function () {
 
-Route::middleware('auth:api')->get('/user', static function (Request $request) {
-    return $request->user();
-});
+    Route::apiResource('recipes', 'RecipeController')->only('show', 'index');
+    Route::post('register', ['uses' => 'AuthController@register',
+                                  'as'   => 'register',]);
+    Route::post('login', ['uses' => 'AuthController@login',
+                               'as'   => 'login',]);
 
-Route::group(['prefix' => 'v1','namespace' => 'API'], static function(){
-
-    Route::post('register', 'AuthController@register');
-    Route::post('login', 'AuthController@login');
-
-    Route::group(['middleware' => 'jwt.auth'], static function() {
-        Route::get('logout', 'AuthController@logout');
+    Route::group(['middleware' => 'jwt.auth'], static function () {
+        Route::group(['middleware' => 'isAdmin'], static function () {
+            Route::apiResource('users', 'UserController')->only('destroy', 'index', 'store');
+        });
 
         Route::apiResource('users', 'UserController')->only('show', 'update')->middleware(['isAdminOrSelf']);
-        Route::apiResource('users', 'UserController')->only('destroy', 'index', 'store')->middleware(['isAdmin']);
-        Route::apiResource('recipes', 'RecipeController')->only('show', 'index');
+        Route::apiResource('recipes', 'RecipeController')->only('destroy', 'update')->middleware(['isAdminOrRecipeCreator']);
+        Route::apiResource('recipes', 'RecipeController')->only('store');
 
+        Route::get('users/{user_id}/recipes', ['uses' => 'RecipeController@getUserRecipes',
+                                               'as'   => 'users.recipes',]);
 
-        Route::group(['prefix' => 'users'], static function(){
-
-            Route::get('/{id}/recipes' ,['uses' => 'RecipeController@getRecipes',
-                                         'as'   => 'users.recipes',]);
-
-            Route::post('/{id}/recipes', ['uses' => 'RecipeController@createRecipe',
-                                          'as'   => 'users.createRecipe',]);
-
-            Route::get('/{id}/recipes/{recipe_id}', ['uses' => 'RecipeController@getRecipe',
-                                                     'as'   => 'users.recipe',]);
-
-            Route::patch('/{id}/recipes/{recipe_id}', ['uses' => 'RecipeController@updateRecipe',
-                                                       'as'   => 'users.updateRecipe',]);
-
-            Route::delete('/{id}/recipes/{recipe_id}', ['uses' => 'RecipeController@deleteRecipe',
-                                                        'as'   => 'users.deleteRecipe',]);
-        });
+        Route::post('logout', ['uses' => 'AuthController@logout',
+                                    'as'   => 'logout',]);
     });
 });

@@ -7,6 +7,7 @@ use App\Http\Requests\LoginFormRequest;
 use App\Http\Requests\RegistrationFormRequest;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -17,6 +18,7 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
+            'role' => 0,
         ]);
 
         $token = auth()->login($user);
@@ -27,6 +29,7 @@ class AuthController extends Controller
     public function login(LoginFormRequest $request)
     {
         $credentials = $request->only(['email', 'password']);
+
         $token = auth()->attempt($credentials);
 
         if (!$token) {
@@ -44,9 +47,10 @@ class AuthController extends Controller
     }
     public function logout(Request $request)
     {
-        $this->validate($request, [
-            'token' => 'required'
-        ]);
+        try {
+            $this->validate($request, ['token' => 'required']);
+        } catch (ValidationException $e) {
+        }
 
         auth()->logout();
 
